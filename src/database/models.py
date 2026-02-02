@@ -181,3 +181,27 @@ class Category(Base):
 
     def __repr__(self):
         return f"<Category(name='{self.name}')>"
+
+
+class EmailVerification(Base):
+    """이메일 인증 코드"""
+    __tablename__ = "email_verifications"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    email = Column(String(255), nullable=False, index=True)
+    name = Column(String(100))
+    code = Column(String(6), nullable=False)  # 6자리 인증코드
+    is_verified = Column(Boolean, default=False)
+    attempts = Column(Integer, default=0)  # 시도 횟수 (최대 5회)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)  # 10분 후 만료
+
+    __table_args__ = (
+        Index("idx_verification_email", "email"),
+        Index("idx_verification_expires", "expires_at"),
+    )
+
+    def __repr__(self):
+        return f"<EmailVerification(email='{self.email}', verified={self.is_verified})>"

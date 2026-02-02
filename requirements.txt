@@ -1,6 +1,11 @@
 # AllergyNewsLetter - 의존성
 # 알러지 뉴스/논문 브리핑 자동화 서비스
 
+# 웹 프레임워크
+fastapi>=0.109.0
+uvicorn>=0.27.0
+python-multipart>=0.0.6
+
 # HTTP 클라이언트
 requests>=2.31.0
 httpx>=0.27.0

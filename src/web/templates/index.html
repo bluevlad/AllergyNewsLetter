@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}AllergyNewsLetter - 알러지 뉴스 브리핑{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>매일 아침, 알러지 뉴스를 받아보세요</h2>
+
+    <div class="features">
+        <div class="feature-item">
+            <span class="feature-icon">📰</span>
+            <div class="feature-text">
+                <strong>최신 알러지 뉴스</strong>
+                식품 알러지, 아토피, 면역치료 관련 국내외 뉴스
+            </div>
+        </div>
+        <div class="feature-item">
+            <span class="feature-icon">📚</span>
+            <div class="feature-text">
+                <strong>PubMed 논문</strong>
+                최신 연구 논문 요약 및 주요 발견 소개
+            </div>
+        </div>
+        <div class="feature-item">
+            <span class="feature-icon">🕐</span>
+            <div class="feature-text">
+                <strong>매일 오전 8시 발송</strong>
+                하루를 시작하며 알러지 트렌드를 확인하세요
+            </div>
+        </div>
+        <div class="feature-item">
+            <span class="feature-icon">🆓</span>
+            <div class="feature-text">
+                <strong>무료 구독</strong>
+                언제든지 구독 해지가 가능합니다
+            </div>
+        </div>
+    </div>
+
+    <a href="/subscribe" class="btn btn-primary">뉴스레터 구독하기</a>
+</div>
+{% endblock %}
