@@ -84,7 +84,7 @@ def send_verification_email(email: str, name: str, code: str) -> bool:
         subject = f"[AllergyNewsLetter] 인증코드: {code}"
 
         result = gmail_sender.send(
-            to_email=email,
+            recipient=email,
             subject=subject,
             html_content=html_content
         )
