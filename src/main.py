@@ -350,6 +350,85 @@ def generate_and_send_reports() -> int:
     return sent_count
 
 
+def send_newsletter_to_recipient(recipient_id: int) -> bool:
+    """특정 수신자에게 당일 뉴스레터 발송 (신규 구독자용)"""
+    generator = get_generator()
+    sender = get_sender()
+
+    if not sender.is_configured:
+        logger.warning("이메일 설정이 완료되지 않아 발송을 건너뜁니다.")
+        return False
+
+    with get_session() as session:
+        # 수신자 조회
+        from .database.models import Recipient
+        recipient = session.query(Recipient).filter(
+            Recipient.id == recipient_id,
+            Recipient.is_active == True
+        ).first()
+
+        if not recipient:
+            logger.error(f"수신자를 찾을 수 없음: {recipient_id}")
+            return False
+
+        # 오늘 뉴스/논문 조회
+        news = ArticleRepository.get_today_articles(
+            session,
+            content_type=ContentType.NEWS,
+            processed_only=True
+        )
+        papers = ArticleRepository.get_today_articles(
+            session,
+            content_type=ContentType.PAPER,
+            processed_only=True
+        )
+
+        if not news and not papers:
+            logger.warning(f"발송할 콘텐츠가 없습니다: {recipient.email}")
+            return False
+
+        # 리포트 생성 및 발송
+        try:
+            report_date = datetime.now()
+            subject = f"[AllergyNewsLetter] {report_date.strftime('%Y-%m-%d')} 알러지 뉴스 브리핑"
+
+            html_content = generator.generate_daily_report(
+                articles=news,
+                papers=papers,
+                report_date=report_date,
+                recipient_name=recipient.name
+            )
+
+            result = sender.send(
+                recipient=recipient.email,
+                subject=subject,
+                html_content=html_content
+            )
+
+            # 이력 저장
+            SendHistoryRepository.create(
+                session,
+                recipient_id=recipient.id,
+                subject=subject,
+                article_count=len(news),
+                paper_count=len(papers),
+                report_date=report_date,
+                is_success=result.success,
+                error_message=result.error_message
+            )
+
+            if result.success:
+                logger.info(f"신규 구독자 뉴스레터 발송 성공: {recipient.email}")
+                return True
+            else:
+                logger.error(f"신규 구독자 뉴스레터 발송 실패: {recipient.email} - {result.error_message}")
+                return False
+
+        except Exception as e:
+            logger.error(f"신규 구독자 리포트 발송 중 오류: {e}")
+            return False
+
+
 def run_scheduler():
     """스케줄러 실행"""
     logger.info("AllergyNewsLetter 스케줄러 시작")
@@ -393,6 +472,7 @@ def main():
     parser.add_argument("--collect-only", action="store_true", help="수집만 실행")
     parser.add_argument("--process-only", action="store_true", help="AI 분석만 실행")
     parser.add_argument("--send-only", action="store_true", help="발송만 실행")
+    parser.add_argument("--web", action="store_true", help="웹 서버 실행")
 
     args = parser.parse_args()
 
@@ -406,7 +486,11 @@ def main():
     logger.info("데이터베이스 초기화...")
     init_db(settings.database_url)
 
-    if args.collect_only:
+    if args.web:
+        logger.info("웹 서버 모드")
+        from .web.app import run_server
+        run_server()
+    elif args.collect_only:
         logger.info("수집만 실행")
         collect_news()
         collect_papers()

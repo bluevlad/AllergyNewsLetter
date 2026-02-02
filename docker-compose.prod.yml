@@ -1,11 +1,12 @@
 version: '3.8'
 
 services:
-  allergynewsletter:
+  # 스케줄러 서비스 (크롤링 + 발송)
+  allergynewsletter-scheduler:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: allergynewsletter
+    container_name: allergynewsletter-scheduler
     restart: unless-stopped
     env_file:
       - .env
@@ -15,11 +16,45 @@ services:
       - ./config:/app/config
     environment:
       - TZ=Asia/Seoul
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
       interval: 5m
       timeout: 10s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 웹 서버 서비스 (구독 관리)
+  allergynewsletter-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: allergynewsletter-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "4050:4050"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+    environment:
+      - TZ=Asia/Seoul
+    command: ["python", "-m", "src.main", "--web"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4050/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     logging:
       driver: "json-file"
       options:

@@ -50,6 +50,15 @@ class Settings(BaseSettings):
     # 로깅
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
 
+    # 웹 서버
+    web_host: str = Field(default="0.0.0.0", env="WEB_HOST")
+    web_port: int = Field(default=4050, env="WEB_PORT")
+
+    # 이메일 인증
+    verification_code_length: int = Field(default=6)
+    verification_expiry_minutes: int = Field(default=10)
+    max_verification_attempts: int = Field(default=5)
+
     class Config:
         env_file = Path(__file__).parent.parent / ".env"
         env_file_encoding = "utf-8"
