@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  allergynewsletter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: allergynewsletter
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+    environment:
+      - TZ=Asia/Seoul
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

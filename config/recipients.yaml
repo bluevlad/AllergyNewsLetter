@@ -1,0 +1,17 @@
+# AllergyNewsLetter 수신자 설정
+# 초기 수신자 목록 (DB 시드용)
+
+recipients:
+  # 예시 수신자 (실제 이메일로 변경하세요)
+  - email: "example@gmail.com"
+    name: "홍길동"
+    group: "ALL"  # PATIENT, MEDICAL, RESEARCHER, ALL
+    allergens_of_interest:
+      - "땅콩"
+      - "우유"
+
+# 수신자 그룹 설명
+# PATIENT: 환자/보호자 - 생활 관리 중심
+# MEDICAL: 의료진 - 임상/연구 중심
+# RESEARCHER: 연구자 - 논문/학술 중심
+# ALL: 전체 - 모든 카테고리

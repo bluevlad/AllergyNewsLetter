@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  allergynewsletter:
+    build: .
+    container_name: allergynewsletter
+    restart: unless-stopped
+
+    volumes:
+      # 데이터 영속화
+      - ./data:/app/data
+      # 로그 영속화
+      - ./logs:/app/logs
+      # 설정 파일 (외부에서 수정 가능)
+      - ./config:/app/config
+      # 환경 변수 파일
+      - ./.env:/app/.env:ro
+
+    environment:
+      - TZ=Asia/Seoul
+      - PYTHONUNBUFFERED=1
+
+    # Ollama 연결 (호스트에서 실행 중인 경우)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    # 헬스체크
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Ollama 서비스 (선택적 - GPU 필요)
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+
+# volumes:
+#   ollama_data:

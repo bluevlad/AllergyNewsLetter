@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AllergyNewsLetter - 알러지 뉴스 브리핑</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif; background-color: #f0f4f0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 700px; margin: 0 auto; background-color: #ffffff;">
+        <!-- Header -->
+        <tr>
+            <td style="background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); padding: 35px 30px; text-align: center;">
+                <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🌿 AllergyNewsLetter</h1>
+                <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px;">알러지 뉴스 & 논문 브리핑</p>
+                <p style="margin: 12px 0 0 0; color: #ffffff; font-size: 20px; font-weight: 500;">{{ report_date.strftime('%Y년 %m월 %d일') }}</p>
+            </td>
+        </tr>
+
+        <!-- Greeting -->
+        <tr>
+            <td style="padding: 30px 30px 20px 30px;">
+                <p style="margin: 0; color: #333333; font-size: 16px;">
+                    {{ recipient_name or '구독자' }}님, 안녕하세요.
+                </p>
+                <p style="margin: 10px 0 0 0; color: #666666; font-size: 15px;">
+                    오늘의 알러지 관련 소식을 전해드립니다.
+                </p>
+            </td>
+        </tr>
+
+        <!-- Stats Summary -->
+        <tr>
+            <td style="padding: 0 30px 25px 30px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="background-color: #e8f5e9; border-radius: 8px; padding: 15px; text-align: center;">
+                            <span style="color: #2e7d32; font-weight: 600; font-size: 14px;">
+                                📰 뉴스 {{ stats.news_count }}건 &nbsp;|&nbsp; 📚 논문 {{ stats.paper_count }}건
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <!-- TOP News -->
+        {% if top_news %}
+        <tr>
+            <td style="padding: 0 30px 25px 30px;">
+                <h2 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #2e7d32; color: #1b5e20; font-size: 18px;">
+                    ⭐ 오늘의 주요 뉴스
+                </h2>
+
+                {% for item in top_news[:3] %}
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td style="background-color: #fafafa; border-left: 4px solid #2e7d32; border-radius: 0 8px 8px 0; padding: 18px;">
+                            <h3 style="margin: 0 0 8px 0; font-size: 16px;">
+                                <a href="{{ item.link }}" style="color: #333333; text-decoration: none;">{{ item.title }}</a>
+                            </h3>
+                            <p style="margin: 0 0 10px 0; color: #888888; font-size: 12px;">
+                                {% if item.category %}[{{ item.category.value }}] {% endif %}
+                                {% if item.source %}{{ item.source }} · {% endif %}
+                                {% if item.pub_date %}{{ item.pub_date|format_date }}{% endif %}
+                                {% if item.importance_score %}
+                                <span style="color: #e53935; margin-left: 8px;">중요도 {{ (item.importance_score * 100)|int }}%</span>
+                                {% endif %}
+                            </p>
+                            <p style="margin: 0; color: #555555; font-size: 14px; line-height: 1.6;">
+                                {{ (item.summary or item.description or '')|truncate_text(200) }}
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                {% endfor %}
+            </td>
+        </tr>
+        {% endif %}
+
+        <!-- News by Category -->
+        {% for category in news_categories %}
+        {% if category.articles %}
+        <tr>
+            <td style="padding: 0 30px 25px 30px;">
+                <h2 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #c8e6c9; color: #2e7d32; font-size: 16px;">
+                    📌 {{ category.name }}
+                    <span style="color: #888888; font-size: 13px; font-weight: normal; margin-left: 8px;">({{ category.articles|length }}건)</span>
+                </h2>
+
+                {% for item in category.articles[:3] %}
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee;">
+                            <h4 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 500;">
+                                <a href="{{ item.link }}" style="color: #333333; text-decoration: none;">{{ item.title }}</a>
+                            </h4>
+                            <p style="margin: 0; color: #888888; font-size: 11px;">
+                                {% if item.source %}{{ item.source }}{% endif %}
+                                {% if item.pub_date %} · {{ item.pub_date|format_date }}{% endif %}
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                {% endfor %}
+
+                {% if category.articles|length > 3 %}
+                <p style="margin: 5px 0 0 0; color: #888888; font-size: 12px; font-style: italic;">
+                    외 {{ category.articles|length - 3 }}건...
+                </p>
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+
+        <!-- Papers Section -->
+        {% if papers %}
+        <tr>
+            <td style="padding: 0 30px 25px 30px;">
+                <h2 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #1565c0; color: #0d47a1; font-size: 18px;">
+                    📚 최신 논문 (PubMed)
+                </h2>
+
+                {% for paper in papers[:5] %}
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                    <tr>
+                        <td style="background-color: #e3f2fd; border-radius: 6px; padding: 14px;">
+                            <h4 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 500;">
+                                <a href="{{ paper.link }}" style="color: #1565c0; text-decoration: none;">{{ paper.title|truncate_text(100) }}</a>
+                            </h4>
+                            <p style="margin: 0; color: #666666; font-size: 11px;">
+                                {{ paper.journal or '' }}
+                                {% if paper.pmid %} | PMID: {{ paper.pmid }}{% endif %}
+                                {% if paper.pub_date %} | {{ paper.pub_date|format_date }}{% endif %}
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                {% endfor %}
+
+                {% if papers|length > 5 %}
+                <p style="margin: 5px 0 0 0; color: #888888; font-size: 12px; font-style: italic;">
+                    외 {{ papers|length - 5 }}건의 논문이 있습니다...
+                </p>
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
+
+        <!-- No Data Message -->
+        {% if not top_news and not papers %}
+        <tr>
+            <td style="padding: 40px 30px; text-align: center;">
+                <p style="color: #888888; font-size: 16px;">
+                    오늘은 수집된 소식이 없습니다.
+                </p>
+            </td>
+        </tr>
+        {% endif %}
+
+        <!-- Footer -->
+        <tr>
+            <td style="background-color: #f5f5f5; padding: 30px; text-align: center; border-top: 1px solid #eeeeee;">
+                <p style="margin: 0 0 10px 0; color: #888888; font-size: 12px;">
+                    이 메일은 AllergyNewsLetter 시스템에서 자동 발송되었습니다.
+                </p>
+                <p style="margin: 0 0 15px 0; color: #aaaaaa; font-size: 11px;">
+                    구독 해지를 원하시면 이 메일에 회신해 주세요.
+                </p>
+                <p style="margin: 0; color: #cccccc; font-size: 11px;">
+                    생성 시간: {{ generated_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

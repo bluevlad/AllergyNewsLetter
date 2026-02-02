@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+ENV
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# 환경 변수 (docker-compose에서 마운트)
+.env
+.env.local
+.env.*.local
+
+# 데이터 (docker-compose에서 마운트)
+data/*.db
+logs/*.log
+
+# 문서
+docs/
+*.md
+!README.md
+
+# 테스트
+tests/
+.pytest_cache
+.coverage
+htmlcov

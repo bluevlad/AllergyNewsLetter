@@ -1,0 +1,103 @@
+# AllergyNewsLetter 검색 키워드 설정
+# 각 카테고리별로 검색할 키워드를 정의합니다.
+
+# ============================================
+# 네이버 뉴스 검색용 키워드 (한글)
+# ============================================
+
+# 핵심 키워드 - 항상 검색
+core:
+  - 식품알레르기
+  - 알레르기 검사
+  - 알러젠
+  - 아나필락시스
+  - 면역치료
+  - 알레르기 진단
+
+# 임상/치료 관련
+clinical:
+  - 알레르기 치료제
+  - 아토피 신약
+  - 항히스타민제
+  - 면역글로불린E
+  - 두드러기 치료
+  - 천식 치료제
+  - 비염 치료
+  - 에피네프린
+
+# 생활/관리
+lifestyle:
+  - 알레르기 식단
+  - 아토피 관리
+  - 알레르기 예방
+  - 저알레르기 식품
+  - 알레르기 환경
+  - 대체 식품
+
+# 시장/산업
+market:
+  - 알레르기 진단키트
+  - 알레르기 시장
+  - 면역치료제 개발
+  - 아토피 시장
+
+# 주요 알러젠별
+allergens:
+  - 땅콩 알레르기
+  - 우유 알레르기
+  - 계란 알레르기
+  - 갑각류 알레르기
+  - 밀 알레르기
+  - 대두 알레르기
+  - 견과류 알레르기
+
+# ============================================
+# PubMed 검색용 키워드 (영문)
+# ============================================
+
+pubmed:
+  # 핵심 검색어
+  core:
+    - food allergy
+    - allergen immunotherapy
+    - anaphylaxis
+    - IgE mediated allergy
+    - oral immunotherapy
+
+  # 특정 알러젠 연구
+  allergens:
+    - peanut allergy
+    - milk allergy
+    - egg allergy
+    - shellfish allergy
+    - tree nut allergy
+
+  # 아토피/피부
+  dermatology:
+    - atopic dermatitis
+    - urticaria treatment
+    - eczema therapy
+
+  # 호흡기
+  respiratory:
+    - allergic rhinitis
+    - allergic asthma
+    - bronchial hyperreactivity
+
+# ============================================
+# 검색 설정
+# ============================================
+
+settings:
+  # 네이버 뉴스 - 키워드당 최대 기사 수
+  naver_max_articles: 30
+
+  # PubMed - 키워드당 최대 논문 수
+  pubmed_max_articles: 20
+
+  # 검색 정렬 (date: 최신순, relevance: 관련도순)
+  naver_sort: date
+  pubmed_sort: date
+
+  # PubMed 검색 기간 (일)
+  pubmed_days_back: 7
