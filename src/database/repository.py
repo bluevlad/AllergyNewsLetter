@@ -13,8 +13,8 @@ from sqlalchemy import create_engine, and_, func
 from sqlalchemy.orm import sessionmaker, Session
 
 from .models import (
-    Base, Article, Recipient, SendHistory, Category,
-    AllergyCategory, RecipientGroup, ContentType
+    Base, Article, Recipient, SendHistory, Category, EmailVerification,
+    AllergyCategory, RecipientGroup, ContentType, VerificationType
 )
 
 

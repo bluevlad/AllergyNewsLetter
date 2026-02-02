@@ -183,6 +183,12 @@ class Category(Base):
         return f"<Category(name='{self.name}')>"
 
 
+class VerificationType(PyEnum):
+    """인증 유형"""
+    SUBSCRIBE = "subscribe"
+    UNSUBSCRIBE = "unsubscribe"
+
+
 class EmailVerification(Base):
     """이메일 인증 코드"""
     __tablename__ = "email_verifications"
@@ -192,6 +198,7 @@ class EmailVerification(Base):
     email = Column(String(255), nullable=False, index=True)
     name = Column(String(100))
     code = Column(String(6), nullable=False)  # 6자리 인증코드
+    verification_type = Column(Enum(VerificationType), default=VerificationType.SUBSCRIBE)
     is_verified = Column(Boolean, default=False)
     attempts = Column(Integer, default=0)  # 시도 횟수 (최대 5회)
 

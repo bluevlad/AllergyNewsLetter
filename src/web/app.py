@@ -18,7 +18,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from ..config import settings
-from ..database.models import Base, Recipient, EmailVerification, RecipientGroup
+from ..database.models import Base, Recipient, EmailVerification, RecipientGroup, VerificationType
 from ..mailer.gmail_sender import GmailSender
 
 # 로깅 설정
@@ -70,18 +70,26 @@ def generate_unsubscribe_token(email: str) -> str:
     return hashlib.sha256(data.encode()).hexdigest()[:32]
 
 
-def send_verification_email(email: str, name: str, code: str) -> bool:
+def send_verification_email(email: str, name: str, code: str, verification_type: str = "subscribe") -> bool:
     """인증코드 이메일 발송"""
     try:
         # 이메일 템플릿 렌더링
         template = email_templates.get_template("verification_code.html")
+
+        if verification_type == "unsubscribe":
+            action_text = "구독 해지"
+            subject = f"[AllergyNewsLetter] 구독 해지 인증코드: {code}"
+        else:
+            action_text = "구독 신청"
+            subject = f"[AllergyNewsLetter] 인증코드: {code}"
+
         html_content = template.render(
             email=email,
             name=name,
-            code=code
+            code=code,
+            action_text=action_text,
+            verification_type=verification_type
         )
-
-        subject = f"[AllergyNewsLetter] 인증코드: {code}"
 
         result = gmail_sender.send(
             recipient=email,
@@ -161,6 +169,7 @@ async def subscribe_submit(
             email=email,
             name=name,
             code=code,
+            verification_type=VerificationType.SUBSCRIBE,
             expires_at=expires_at
         )
         db.add(verification)
@@ -336,35 +345,176 @@ async def result_page(request: Request, email: str = ""):
     })
 
 
-@app.get("/unsubscribe/{token}", response_class=HTMLResponse)
-async def unsubscribe_form(request: Request, token: str):
-    """구독 해지 확인 페이지"""
+@app.get("/unsubscribe", response_class=HTMLResponse)
+async def unsubscribe_form(request: Request):
+    """구독 해지 신청 폼"""
+    return templates.TemplateResponse("unsubscribe_request.html", {"request": request})
+
+
+@app.post("/unsubscribe", response_class=HTMLResponse)
+async def unsubscribe_submit(
+    request: Request,
+    email: str = Form(...)
+):
+    """구독 해지 신청 처리 - 인증코드 발송"""
+    email = email.strip().lower()
+
     db = SessionLocal()
     try:
+        # 구독 중인지 확인
         recipient = db.query(Recipient).filter(
-            Recipient.unsubscribe_token == token,
+            Recipient.email == email,
             Recipient.is_active == True
         ).first()
 
         if not recipient:
-            return templates.TemplateResponse("unsubscribe.html", {
+            return templates.TemplateResponse("unsubscribe_request.html", {
                 "request": request,
-                "error": "유효하지 않은 링크이거나 이미 해지된 구독입니다."
+                "error": "해당 이메일로 구독 중인 내역이 없습니다.",
+                "email": email
             })
 
-        return templates.TemplateResponse("unsubscribe.html", {
-            "request": request,
-            "email": recipient.email,
-            "token": token
-        })
+        # 인증코드 생성
+        code = generate_verification_code()
+        expires_at = datetime.utcnow() + timedelta(minutes=settings.verification_expiry_minutes)
+
+        # 기존 미인증 해지 요청 삭제
+        db.query(EmailVerification).filter(
+            EmailVerification.email == email,
+            EmailVerification.verification_type == VerificationType.UNSUBSCRIBE,
+            EmailVerification.is_verified == False
+        ).delete()
+
+        # 새 인증 레코드 생성
+        verification = EmailVerification(
+            email=email,
+            name=recipient.name,
+            code=code,
+            verification_type=VerificationType.UNSUBSCRIBE,
+            expires_at=expires_at
+        )
+        db.add(verification)
+        db.commit()
+        db.refresh(verification)
+
+        # 인증 이메일 발송
+        if send_verification_email(email, recipient.name, code, "unsubscribe"):
+            logger.info(f"구독 해지 인증코드 발송 완료: {email}")
+            return RedirectResponse(
+                url=f"/unsubscribe/verify/{verification.id}?email={email}",
+                status_code=303
+            )
+        else:
+            return templates.TemplateResponse("unsubscribe_request.html", {
+                "request": request,
+                "error": "이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.",
+                "email": email
+            })
 
     finally:
         db.close()
 
 
-@app.post("/unsubscribe/{token}", response_class=HTMLResponse)
-async def unsubscribe_submit(request: Request, token: str):
-    """구독 해지 처리"""
+@app.get("/unsubscribe/verify/{verification_id}", response_class=HTMLResponse)
+async def unsubscribe_verify_form(request: Request, verification_id: int, email: str = ""):
+    """구독 해지 인증코드 입력 폼"""
+    return templates.TemplateResponse("unsubscribe_verify.html", {
+        "request": request,
+        "verification_id": verification_id,
+        "email": email
+    })
+
+
+@app.post("/unsubscribe/verify", response_class=HTMLResponse)
+async def unsubscribe_verify_submit(
+    request: Request,
+    verification_id: int = Form(...),
+    email: str = Form(...),
+    code: str = Form(...)
+):
+    """구독 해지 인증코드 확인"""
+    code = code.strip()
+
+    db = SessionLocal()
+    try:
+        verification = db.query(EmailVerification).filter(
+            EmailVerification.id == verification_id,
+            EmailVerification.email == email,
+            EmailVerification.verification_type == VerificationType.UNSUBSCRIBE
+        ).first()
+
+        if not verification:
+            return templates.TemplateResponse("unsubscribe_verify.html", {
+                "request": request,
+                "verification_id": verification_id,
+                "email": email,
+                "error": "인증 정보를 찾을 수 없습니다. 다시 신청해주세요."
+            })
+
+        # 만료 확인
+        if datetime.utcnow() > verification.expires_at:
+            return templates.TemplateResponse("unsubscribe_verify.html", {
+                "request": request,
+                "verification_id": verification_id,
+                "email": email,
+                "error": "인증코드가 만료되었습니다. 다시 신청해주세요."
+            })
+
+        # 시도 횟수 확인
+        if verification.attempts >= settings.max_verification_attempts:
+            return templates.TemplateResponse("unsubscribe_verify.html", {
+                "request": request,
+                "verification_id": verification_id,
+                "email": email,
+                "error": "인증 시도 횟수를 초과했습니다. 다시 신청해주세요."
+            })
+
+        # 코드 확인
+        if verification.code != code:
+            verification.attempts += 1
+            db.commit()
+            remaining = settings.max_verification_attempts - verification.attempts
+            return templates.TemplateResponse("unsubscribe_verify.html", {
+                "request": request,
+                "verification_id": verification_id,
+                "email": email,
+                "error": f"인증코드가 일치하지 않습니다. (남은 시도: {remaining}회)"
+            })
+
+        # 인증 성공 - 구독 해지 처리
+        verification.is_verified = True
+
+        recipient = db.query(Recipient).filter(
+            Recipient.email == email,
+            Recipient.is_active == True
+        ).first()
+
+        if recipient:
+            recipient.is_active = False
+            recipient.updated_at = datetime.utcnow()
+            logger.info(f"구독 해지 완료: {email}")
+
+        db.commit()
+
+        return RedirectResponse(url=f"/unsubscribe/result?email={email}", status_code=303)
+
+    finally:
+        db.close()
+
+
+@app.get("/unsubscribe/result", response_class=HTMLResponse)
+async def unsubscribe_result_page(request: Request, email: str = ""):
+    """구독 해지 완료 페이지"""
+    return templates.TemplateResponse("unsubscribe_result.html", {
+        "request": request,
+        "email": email
+    })
+
+
+# 토큰 기반 구독 해지 (이메일 링크용 - 하위 호환)
+@app.get("/unsubscribe/token/{token}", response_class=HTMLResponse)
+async def unsubscribe_by_token(request: Request, token: str):
+    """토큰 기반 구독 해지 (이메일 링크)"""
     db = SessionLocal()
     try:
         recipient = db.query(Recipient).filter(
@@ -373,7 +523,7 @@ async def unsubscribe_submit(request: Request, token: str):
         ).first()
 
         if not recipient:
-            return templates.TemplateResponse("unsubscribe.html", {
+            return templates.TemplateResponse("unsubscribe_result.html", {
                 "request": request,
                 "error": "유효하지 않은 링크이거나 이미 해지된 구독입니다."
             })
@@ -383,11 +533,10 @@ async def unsubscribe_submit(request: Request, token: str):
         recipient.updated_at = datetime.utcnow()
         db.commit()
 
-        logger.info(f"구독 해지 완료: {email}")
+        logger.info(f"토큰 기반 구독 해지 완료: {email}")
 
-        return templates.TemplateResponse("unsubscribe.html", {
+        return templates.TemplateResponse("unsubscribe_result.html", {
             "request": request,
-            "success": True,
             "email": email
         })
 

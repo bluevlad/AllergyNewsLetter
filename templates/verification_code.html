@@ -27,16 +27,29 @@
                         <td style="padding: 0 32px 32px 32px;">
                             <p style="color: #f1f5f9; font-size: 16px; margin: 0 0 24px 0; text-align: center;">
                                 안녕하세요{% if name %}, <strong>{{ name }}</strong>님{% endif %}!<br>
+                                {% if verification_type == 'unsubscribe' %}
+                                뉴스레터 <strong style="color: #ef4444;">구독 해지</strong>를 위한 인증코드입니다.
+                                {% else %}
                                 뉴스레터 구독을 위한 인증코드입니다.
+                                {% endif %}
                             </p>
 
                             <!-- Verification Code Box -->
+                            {% if verification_type == 'unsubscribe' %}
+                            <div style="background: rgba(239, 68, 68, 0.1); border: 2px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+                                <p style="color: #94a3b8; font-size: 14px; margin: 0 0 8px 0;">구독 해지 인증코드</p>
+                                <p style="font-size: 36px; font-weight: 700; font-family: 'Monaco', 'Consolas', monospace; letter-spacing: 8px; color: #ef4444; margin: 0;">
+                                    {{ code }}
+                                </p>
+                            </div>
+                            {% else %}
                             <div style="background: rgba(16, 185, 129, 0.1); border: 2px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
                                 <p style="color: #94a3b8; font-size: 14px; margin: 0 0 8px 0;">인증코드</p>
                                 <p style="font-size: 36px; font-weight: 700; font-family: 'Monaco', 'Consolas', monospace; letter-spacing: 8px; color: #10b981; margin: 0;">
                                     {{ code }}
                                 </p>
                             </div>
+                            {% endif %}
 
                             <!-- Expiry Notice -->
                             <div style="background: rgba(245, 158, 11, 0.1); border-radius: 8px; padding: 12px 16px; margin-bottom: 24px;">
@@ -46,7 +59,11 @@
                             </div>
 
                             <p style="color: #94a3b8; font-size: 14px; margin: 0; line-height: 1.6;">
+                                {% if verification_type == 'unsubscribe' %}
+                                위 인증코드를 구독 해지 페이지에 입력해주세요.<br>
+                                {% else %}
                                 위 인증코드를 구독 페이지에 입력해주세요.<br>
+                                {% endif %}
                                 본인이 요청하지 않은 경우 이 메일을 무시하셔도 됩니다.
                             </p>
                         </td>
