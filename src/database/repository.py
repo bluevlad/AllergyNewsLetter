@@ -220,6 +220,47 @@ class ArticleRepository:
         return query.order_by(Article.importance_score.desc()).all()
 
     @staticmethod
+    def get_latest_articles(
+        session: Session,
+        content_type: ContentType = None,
+        processed_only: bool = True
+    ) -> list[Article]:
+        """가장 최근 수집된 기사/논문 조회 (마지막 수집 일자 기준)"""
+        # 가장 최근 수집 일자 조회
+        latest_date_query = session.query(
+            func.date(Article.collected_at)
+        ).filter(
+            Article.is_duplicate == False
+        )
+
+        if content_type:
+            latest_date_query = latest_date_query.filter(Article.content_type == content_type)
+
+        if processed_only:
+            latest_date_query = latest_date_query.filter(Article.is_processed == True)
+
+        latest_date = latest_date_query.order_by(Article.collected_at.desc()).first()
+
+        if not latest_date or not latest_date[0]:
+            return []
+
+        # 해당 일자의 기사 조회
+        query = session.query(Article).filter(
+            and_(
+                func.date(Article.collected_at) == latest_date[0],
+                Article.is_duplicate == False
+            )
+        )
+
+        if content_type:
+            query = query.filter(Article.content_type == content_type)
+
+        if processed_only:
+            query = query.filter(Article.is_processed == True)
+
+        return query.order_by(Article.importance_score.desc()).all()
+
+    @staticmethod
     def get_recent_hashes(session: Session, days: int = 7) -> list[str]:
         """최근 N일간 해시 목록"""
         since = datetime.utcnow() - timedelta(days=days)

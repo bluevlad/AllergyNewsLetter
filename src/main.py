@@ -371,13 +371,13 @@ def send_newsletter_to_recipient(recipient_id: int) -> bool:
             logger.error(f"수신자를 찾을 수 없음: {recipient_id}")
             return False
 
-        # 오늘 뉴스/논문 조회
-        news = ArticleRepository.get_today_articles(
+        # 최신 뉴스/논문 조회 (마지막 수집 일자 기준)
+        news = ArticleRepository.get_latest_articles(
             session,
             content_type=ContentType.NEWS,
             processed_only=True
         )
-        papers = ArticleRepository.get_today_articles(
+        papers = ArticleRepository.get_latest_articles(
             session,
             content_type=ContentType.PAPER,
             processed_only=True
