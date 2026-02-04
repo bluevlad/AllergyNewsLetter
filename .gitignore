@@ -25,6 +25,9 @@ wheels/
 venv/
 ENV/
 
+# Claude Code
+.claude/
+
 # IDE
 .vscode/
 .idea/
