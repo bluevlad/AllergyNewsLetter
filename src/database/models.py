@@ -76,6 +76,9 @@ class Article(Base):
     journal = Column(String(200))      # 저널명
     abstract = Column(Text)            # 초록
 
+    # 업체 동향
+    company = Column(String(100), nullable=True)  # 관련 회사명 (None이면 일반 뉴스)
+
     # AI 분석 결과
     category = Column(Enum(AllergyCategory), default=AllergyCategory.OTHER)
     summary = Column(Text)
@@ -101,6 +104,7 @@ class Article(Base):
         Index("idx_article_collected", "collected_at"),
         Index("idx_article_content_hash", "content_hash"),
         Index("idx_article_pmid", "pmid"),
+        Index("idx_article_company", "company"),
     )
 
     def __repr__(self):

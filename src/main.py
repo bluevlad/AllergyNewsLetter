@@ -9,6 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import yaml
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
@@ -72,19 +73,24 @@ def run_crawl_job():
 
     try:
         # 1. 뉴스 수집
-        logger.info("[1/3] 네이버 뉴스 수집 시작...")
+        logger.info("[1/4] 네이버 뉴스 수집 시작...")
         news_count = collect_news()
-        logger.info(f"[1/3] 뉴스 수집 완료: {news_count}건")
+        logger.info(f"[1/4] 뉴스 수집 완료: {news_count}건")
 
-        # 2. 논문 수집
-        logger.info("[2/3] PubMed 논문 수집 시작...")
+        # 2. 업체동향 수집
+        logger.info("[2/4] 업체동향 뉴스 수집 시작...")
+        company_count = collect_company_news()
+        logger.info(f"[2/4] 업체동향 수집 완료: {company_count}건")
+
+        # 3. 논문 수집
+        logger.info("[3/4] PubMed 논문 수집 시작...")
         paper_count = collect_papers()
-        logger.info(f"[2/3] 논문 수집 완료: {paper_count}건")
+        logger.info(f"[3/4] 논문 수집 완료: {paper_count}건")
 
-        # 3. AI 분석
-        logger.info("[3/3] AI 분석 시작...")
+        # 4. AI 분석
+        logger.info("[4/4] AI 분석 시작...")
         processed_count = process_articles()
-        logger.info(f"[3/3] 분석 완료: {processed_count}건")
+        logger.info(f"[4/4] 분석 완료: {processed_count}건")
 
         logger.info("=" * 50)
         logger.info("크롤링 작업 완료")
@@ -120,28 +126,33 @@ def run_daily_job():
 
     try:
         # 1. 뉴스 수집
-        logger.info("[1/4] 네이버 뉴스 수집...")
+        logger.info("[1/5] 네이버 뉴스 수집...")
         news_count = collect_news()
-        logger.info(f"[1/4] 뉴스 수집 완료: {news_count}건")
+        logger.info(f"[1/5] 뉴스 수집 완료: {news_count}건")
 
-        # 2. 논문 수집
-        logger.info("[2/4] PubMed 논문 수집...")
+        # 2. 업체동향 수집
+        logger.info("[2/5] 업체동향 뉴스 수집...")
+        company_count = collect_company_news()
+        logger.info(f"[2/5] 업체동향 수집 완료: {company_count}건")
+
+        # 3. 논문 수집
+        logger.info("[3/5] PubMed 논문 수집...")
         paper_count = collect_papers()
-        logger.info(f"[2/4] 논문 수집 완료: {paper_count}건")
+        logger.info(f"[3/5] 논문 수집 완료: {paper_count}건")
 
-        if news_count == 0 and paper_count == 0:
+        if news_count == 0 and paper_count == 0 and company_count == 0:
             logger.warning("수집된 콘텐츠가 없습니다.")
             return
 
-        # 3. AI 분석
-        logger.info("[3/4] AI 분석...")
+        # 4. AI 분석
+        logger.info("[4/5] AI 분석...")
         processed_count = process_articles()
-        logger.info(f"[3/4] 분석 완료: {processed_count}건")
+        logger.info(f"[4/5] 분석 완료: {processed_count}건")
 
-        # 4. 리포트 발송
-        logger.info("[4/4] 리포트 발송...")
+        # 5. 리포트 발송
+        logger.info("[5/5] 리포트 발송...")
         send_count = generate_and_send_reports()
-        logger.info(f"[4/4] 발송 완료: {send_count}건")
+        logger.info(f"[5/5] 발송 완료: {send_count}건")
 
         logger.info("=" * 50)
         logger.info("일일 작업 완료")
@@ -225,6 +236,60 @@ def collect_papers() -> int:
         return 0
 
 
+def load_company_keywords() -> dict:
+    """keywords.yaml에서 회사 키워드 로드"""
+    keywords_path = settings.BASE_DIR / "config" / "keywords.yaml"
+    try:
+        with open(keywords_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        return config.get("companies", {})
+    except Exception as e:
+        logger.warning(f"회사 키워드 로드 실패: {e}")
+        return {}
+
+
+def collect_company_news() -> int:
+    """업체 동향 뉴스 수집"""
+    try:
+        companies = load_company_keywords()
+        if not companies:
+            logger.info("설정된 회사 키워드가 없습니다.")
+            return 0
+
+        collector = NaverNewsCollector()
+
+        with get_session() as session:
+            existing_hashes = set(ArticleRepository.get_recent_hashes(session, days=7))
+            new_count = 0
+
+            articles = collector.collect_company_news(
+                companies,
+                max_per_keyword=10
+            )
+
+            for article in articles:
+                # 중복 체크
+                if article.content_hash in existing_hashes:
+                    continue
+
+                if ArticleRepository.exists_by_link(session, article.link):
+                    continue
+
+                # 저장
+                article_data = article.to_dict()
+                article_data["content_type"] = ContentType.NEWS
+                ArticleRepository.create(session, article_data)
+                existing_hashes.add(article.content_hash)
+                new_count += 1
+
+            logger.info(f"신규 업체동향 뉴스 {new_count}건 저장 완료")
+            return new_count
+
+    except Exception as e:
+        logger.error(f"업체동향 뉴스 수집 실패: {e}")
+        return 0
+
+
 def process_articles() -> int:
     """AI 분석"""
     classifier = get_classifier()
@@ -274,14 +339,26 @@ def generate_and_send_reports() -> int:
         logger.warning("이메일 설정이 완료되지 않아 발송을 건너뜁니다.")
         return 0
 
+    # company_types 구성
+    companies = load_company_keywords()
+    company_types = {name: config.get("type", "competitor") for name, config in companies.items()}
+
     sent_count = 0
 
     with get_session() as session:
-        # 오늘 뉴스/논문 조회
+        # 오늘 뉴스 조회 (업체동향 제외)
         news = ArticleRepository.get_today_articles(
             session,
             content_type=ContentType.NEWS,
-            processed_only=True
+            processed_only=True,
+            exclude_company=True
+        )
+        # 업체동향 뉴스 별도 조회
+        company_news = ArticleRepository.get_today_articles(
+            session,
+            content_type=ContentType.NEWS,
+            processed_only=True,
+            company_only=True
         )
         papers = ArticleRepository.get_today_articles(
             session,
@@ -289,7 +366,7 @@ def generate_and_send_reports() -> int:
             processed_only=True
         )
 
-        if not news and not papers:
+        if not news and not papers and not company_news:
             logger.warning("발송할 콘텐츠가 없습니다.")
             return 0
 
@@ -315,8 +392,10 @@ def generate_and_send_reports() -> int:
                 html_content = generator.generate_daily_report(
                     articles=news,
                     papers=papers,
+                    company_articles=company_news,
                     report_date=report_date,
-                    recipient_name=recipient.name
+                    recipient_name=recipient.name,
+                    company_types=company_types
                 )
 
                 # 발송
@@ -331,7 +410,7 @@ def generate_and_send_reports() -> int:
                     session,
                     recipient_id=recipient.id,
                     subject=subject,
-                    article_count=len(news),
+                    article_count=len(news) + len(company_news),
                     paper_count=len(papers),
                     report_date=report_date,
                     is_success=result.success,
@@ -359,6 +438,10 @@ def send_newsletter_to_recipient(recipient_id: int) -> bool:
         logger.warning("이메일 설정이 완료되지 않아 발송을 건너뜁니다.")
         return False
 
+    # company_types 구성
+    companies = load_company_keywords()
+    company_types = {name: config.get("type", "competitor") for name, config in companies.items()}
+
     with get_session() as session:
         # 수신자 조회
         from .database.models import Recipient
@@ -375,7 +458,14 @@ def send_newsletter_to_recipient(recipient_id: int) -> bool:
         news = ArticleRepository.get_latest_articles(
             session,
             content_type=ContentType.NEWS,
-            processed_only=True
+            processed_only=True,
+            exclude_company=True
+        )
+        company_news = ArticleRepository.get_latest_articles(
+            session,
+            content_type=ContentType.NEWS,
+            processed_only=True,
+            company_only=True
         )
         papers = ArticleRepository.get_latest_articles(
             session,
@@ -383,7 +473,7 @@ def send_newsletter_to_recipient(recipient_id: int) -> bool:
             processed_only=True
         )
 
-        if not news and not papers:
+        if not news and not papers and not company_news:
             logger.warning(f"발송할 콘텐츠가 없습니다: {recipient.email}")
             return False
 
@@ -395,8 +485,10 @@ def send_newsletter_to_recipient(recipient_id: int) -> bool:
             html_content = generator.generate_daily_report(
                 articles=news,
                 papers=papers,
+                company_articles=company_news,
                 report_date=report_date,
-                recipient_name=recipient.name
+                recipient_name=recipient.name,
+                company_types=company_types
             )
 
             result = sender.send(
@@ -493,6 +585,7 @@ def main():
     elif args.collect_only:
         logger.info("수집만 실행")
         collect_news()
+        collect_company_news()
         collect_papers()
     elif args.process_only:
         logger.info("AI 분석만 실행")

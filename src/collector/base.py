@@ -42,11 +42,14 @@ class CollectedItem:
 class NewsArticle(CollectedItem):
     """뉴스 기사"""
     original_link: str = ""
+    company: Optional[str] = None  # 관련 회사명 (업체 동향용)
 
     def to_dict(self) -> dict:
         data = super().to_dict()
         data["original_link"] = self.original_link
         data["content_type"] = "NEWS"
+        if self.company:
+            data["company"] = self.company
         return data
 
 

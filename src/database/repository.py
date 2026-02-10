@@ -153,6 +153,7 @@ class ArticleRepository:
             journal=article_data.get("journal"),
             abstract=article_data.get("abstract"),
             content_hash=content_hash,
+            company=article_data.get("company"),
         )
 
         session.add(article)
@@ -199,9 +200,16 @@ class ArticleRepository:
     def get_today_articles(
         session: Session,
         content_type: ContentType = None,
-        processed_only: bool = True
+        processed_only: bool = True,
+        company_only: bool = False,
+        exclude_company: bool = False
     ) -> list[Article]:
-        """오늘 수집된 기사/논문 조회"""
+        """오늘 수집된 기사/논문 조회
+
+        Args:
+            company_only: True면 company 필드가 있는 기사만 조회
+            exclude_company: True면 company 필드가 없는 기사만 조회
+        """
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
         query = session.query(Article).filter(
@@ -217,13 +225,20 @@ class ArticleRepository:
         if processed_only:
             query = query.filter(Article.is_processed == True)
 
+        if company_only:
+            query = query.filter(Article.company.isnot(None))
+        elif exclude_company:
+            query = query.filter(Article.company.is_(None))
+
         return query.order_by(Article.importance_score.desc()).all()
 
     @staticmethod
     def get_latest_articles(
         session: Session,
         content_type: ContentType = None,
-        processed_only: bool = True
+        processed_only: bool = True,
+        company_only: bool = False,
+        exclude_company: bool = False
     ) -> list[Article]:
         """가장 최근 수집된 기사/논문 조회 (마지막 수집 일자 기준)"""
         # 가장 최근 수집 일자 조회
@@ -257,6 +272,11 @@ class ArticleRepository:
 
         if processed_only:
             query = query.filter(Article.is_processed == True)
+
+        if company_only:
+            query = query.filter(Article.company.isnot(None))
+        elif exclude_company:
+            query = query.filter(Article.company.is_(None))
 
         return query.order_by(Article.importance_score.desc()).all()
 

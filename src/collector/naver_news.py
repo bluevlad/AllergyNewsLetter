@@ -187,6 +187,43 @@ class NaverNewsCollector(BaseCollector):
         logger.info(f"총 {len(all_articles)}개 고유 기사 수집 (키워드 {len(keywords)}개)")
         return all_articles
 
+    def collect_company_news(
+        self,
+        companies: dict,
+        max_per_keyword: int = 10
+    ) -> List[NewsArticle]:
+        """
+        회사별 뉴스 수집
+
+        Args:
+            companies: {회사명: {"keywords": [...], "type": "main"|"competitor"}} 형태
+            max_per_keyword: 키워드당 최대 기사 수
+
+        Returns:
+            company 필드가 태깅된 NewsArticle 리스트
+        """
+        all_articles = []
+        seen_hashes = set()
+
+        for company_name, config in companies.items():
+            keywords = config.get("keywords", [])
+            company_articles = []
+
+            for keyword in keywords:
+                articles = self.search(keyword, max_results=max_per_keyword)
+
+                for article in articles:
+                    if article.content_hash not in seen_hashes:
+                        seen_hashes.add(article.content_hash)
+                        article.company = company_name
+                        company_articles.append(article)
+
+            all_articles.extend(company_articles)
+            logger.info(f"[업체동향] {company_name}: {len(company_articles)}개 기사 수집")
+
+        logger.info(f"[업체동향] 총 {len(all_articles)}개 기사 수집 완료")
+        return all_articles
+
     def close(self):
         """HTTP 클라이언트 종료"""
         self._client.close()
