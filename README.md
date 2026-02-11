@@ -9,7 +9,7 @@
 - **뉴스 자동 수집** — 네이버 뉴스에서 알러지 관련 기사 수집
 - **논문 자동 수집** — PubMed에서 최신 알러지 연구 논문 수집
 - **AI 기반 분석** — 기사/논문 요약, 카테고리 분류, 중요도 산정
-- **경쟁사 동향 분석** — 고객사(수젠텍) + 경쟁사 3곳 뉴스 동향 비교
+- **기업 동향 분석** — 등록된 기업들의 뉴스 동향 비교 분석
 - **뉴스레터 발송** — HTML 형태의 일일 브리핑 자동 발송
 
 ## 시스템 구성
@@ -59,7 +59,7 @@
 | 섹션 | 설명 |
 |------|------|
 | ⭐ 오늘의 주요 뉴스 | 중요도 상위 3건 |
-| 📊 경쟁사 동향 분석 | 고객사/경쟁사 4개 기업 동향 비교 |
+| 📊 기업 동향 분석 | 등록된 기업들의 뉴스 동향 비교 |
 | 🔬 의학·연구 소식 | 임상/치료 + 연구/학술 통합 |
 | 📋 산업·생활 소식 | 생활/관리 + 산업/시장 + 규제/정책 통합 |
 | 📚 최신 논문 | PubMed 논문 |
@@ -79,14 +79,16 @@
 
 ## 문서
 
+상세 문서는 [Claude-Opus-bluevlad/docs/AllergyNewsLetter](../Claude-Opus-bluevlad/docs/AllergyNewsLetter/) 에서 관리합니다.
+
 | 문서 | 설명 |
 |------|------|
-| [빠른 시작](docs/QUICKSTART.md) | 설치, 실행, 프로젝트 구조, 개발 현황 |
-| [설치 가이드](docs/SETUP.md) | 상세 설치/설정/문제 해결 |
-| [배포 가이드](docs/DEPLOYMENT.md) | Docker, GitHub Actions, 운영 명령어 |
-| [기술 제안서](docs/PROPOSAL.md) | 프로젝트 설계 문서 |
-| [고도화 이력](docs/ENHANCEMENT_LOG.md) | 기능 고도화 변경 내역 |
-| [WBS](docs/WBS.md) | 작업 분해 구조 및 진행 상태 |
+| [빠른 시작](../Claude-Opus-bluevlad/docs/AllergyNewsLetter/QUICKSTART.md) | 설치, 실행, 프로젝트 구조, 개발 현황 |
+| [설치 가이드](../Claude-Opus-bluevlad/docs/AllergyNewsLetter/SETUP.md) | 상세 설치/설정/문제 해결 |
+| [배포 가이드](../Claude-Opus-bluevlad/docs/AllergyNewsLetter/DEPLOYMENT.md) | Docker, GitHub Actions, 운영 명령어 |
+| [기술 제안서](../Claude-Opus-bluevlad/docs/AllergyNewsLetter/PROPOSAL.md) | 프로젝트 설계 문서 |
+| [고도화 이력](../Claude-Opus-bluevlad/docs/AllergyNewsLetter/ENHANCEMENT_LOG.md) | 기능 고도화 변경 내역 |
+| [WBS](../Claude-Opus-bluevlad/docs/AllergyNewsLetter/WBS.md) | 작업 분해 구조 및 진행 상태 |
 
 ## 라이선스
 

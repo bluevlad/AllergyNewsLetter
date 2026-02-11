@@ -17,7 +17,7 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: process.env.BASE_URL || 'http://www.unmong.com:4050',
+    baseURL: process.env.BASE_URL || 'http://localhost:4050',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

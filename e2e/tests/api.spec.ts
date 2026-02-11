@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://www.unmong.com:4050';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:4050';
 
 test.describe('OpenAPI 스펙', () => {
   test('GET /openapi.json - OpenAPI 스펙 반환', async ({ request }) => {

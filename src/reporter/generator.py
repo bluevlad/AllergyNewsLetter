@@ -13,8 +13,23 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ..config import settings
 from ..database.models import Article, AllergyCategory, ContentType
 
-# 동향 분석 대상 기업 목록 (이 기업들만 동향 분석 섹션에 표시)
-TREND_TARGET_COMPANIES = ["수젠텍", "에스디바이오센서", "바디텍메드", "프로테옴텍"]
+# 동향 분석 대상 기업 목록은 config/keywords.yaml의 companies 섹션에서 로드됩니다.
+TREND_TARGET_COMPANIES = []
+
+
+def load_trend_target_companies():
+    """keywords.yaml의 companies 섹션에서 동향 분석 대상 기업 목록을 로드"""
+    global TREND_TARGET_COMPANIES
+    try:
+        import yaml
+        keywords_path = settings.BASE_DIR / "config" / "keywords.yaml"
+        if keywords_path.exists():
+            with open(keywords_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+            companies = config.get("companies", {})
+            TREND_TARGET_COMPANIES = list(companies.keys())
+    except Exception as e:
+        logger.warning(f"동향 분석 대상 기업 로드 실패: {e}")
 
 # 뉴스 대분류 그룹 정의
 NEWS_MEGA_GROUPS = [
@@ -54,6 +69,10 @@ class ReportGenerator:
             template_dir = settings.BASE_DIR / "templates"
 
         self.template_dir = Path(template_dir)
+
+        # config에서 동향 분석 대상 기업 로드
+        if not TREND_TARGET_COMPANIES:
+            load_trend_target_companies()
 
         self._env = Environment(
             loader=FileSystemLoader(str(self.template_dir)),

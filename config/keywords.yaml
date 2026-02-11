@@ -52,51 +52,27 @@ allergens:
   - 견과류 알레르기
 
 # ============================================
-# 업체 동향 - 경쟁사 모니터링
+# 업체 동향 - 기업 모니터링
 # ============================================
+# 모니터링할 기업을 등록합니다.
+# type: main (자사) / competitor (경쟁사)
+# keywords: 뉴스 검색에 사용할 키워드 목록
+#
+# 예시:
+# companies:
+#   MyCompany:
+#     keywords:
+#       - MyCompany
+#       - MyCompany 알레르기
+#       - MyCompany 진단
+#     type: main
+#   CompetitorA:
+#     keywords:
+#       - CompetitorA
+#       - CompetitorA 진단
+#     type: competitor
 
-companies:
-  수젠텍:
-    keywords:
-      - 수젠텍
-      - 수젠텍 알레르기
-      - 수젠텍 진단
-      - 수젠텍 진단키트
-    type: main  # 자사
-  에스디바이오센서:
-    keywords:
-      - 에스디바이오센서
-      - SD바이오센서
-      - SD Biosensor
-      - 에스디바이오센서 진단
-    type: competitor
-  프로테옴텍:
-    keywords:
-      - 프로테옴텍
-      - 프로테옴텍 진단
-      - 프로테옴텍 알레르기
-    type: competitor
-  LG화학:
-    keywords:
-      - LG화학 알레르기
-      - LG화학 진단키트
-      - LG화학 바이오
-      - LG화학 면역
-    type: competitor
-  바디텍메드:
-    keywords:
-      - 바디텍메드
-      - 바디텍메드 진단
-      - 바디텍메드 POCT
-    type: competitor
-  써모피셔:
-    keywords:
-      - 써모피셔
-      - 써모피셔 알레르기
-      - Thermo Fisher 알레르기
-      - ImmunoCAP
-      - 이뮤노캡
-    type: competitor
+companies: {}
 
 # ============================================
 # PubMed 검색용 키워드 (영문)
