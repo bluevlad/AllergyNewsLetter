@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AllergyNewsLetter - 알러지 뉴스/논문 브리핑 자동화 서비스 (PubMed 수집 → AI 요약 → 이메일 뉴스레터)
+AllergyNewsLetter - 알러지 뉴스/논문 브리핑 자동화 서비스 (네이버뉴스 + PubMed 수집 → AI 분류/요약 → 이메일 뉴스레터)
 
 ## Environment
 
@@ -55,8 +55,17 @@ python -m src.main --send-only     # 발송만
 docker compose up -d            # 개발
 docker compose -f docker-compose.prod.yml up -d  # 운영
 
+# 웹 서버 직접 실행 (run_web.py)
+python run_web.py
+
 # 테스트
 pytest tests/
+
+# E2E 테스트 (e2e/)
+cd e2e
+npm install
+npm run test        # Playwright 테스트
+npm run test:ui     # UI 모드
 ```
 
 Default server port: 4050
@@ -68,7 +77,10 @@ AllergyNewsLetter/
 ├── src/
 │   ├── main.py              # 엔트리포인트
 │   ├── config.py            # Pydantic 설정
-│   ├── collector/           # PubMed 논문/뉴스 수집
+│   ├── collector/           # 데이터 수집
+│   │   ├── base.py          # 추상 베이스 클래스
+│   │   ├── naver_news.py    # 네이버 뉴스 API
+│   │   └── pubmed.py        # PubMed E-utilities
 │   ├── database/            # SQLAlchemy 모델/세션
 │   ├── mailer/              # 이메일 발송
 │   ├── processor/           # AI 요약 (Ollama/Claude)
@@ -103,7 +115,8 @@ AllergyNewsLetter/
 
 - 환경변수는 `.env` 파일로 관리
 - `.env` 로딩: pydantic-settings
-- PubMed 검색 파라미터: `config/` 하위 YAML
+- 검색 키워드: `config/keywords.yaml`
+- 수신자 목록: `config/recipients.yaml`
 
 ## Documentation
 
