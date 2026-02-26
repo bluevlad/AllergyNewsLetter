@@ -20,6 +20,7 @@ from sqlalchemy.orm import sessionmaker
 from ..config import settings
 from ..database.models import Base, Recipient, EmailVerification, RecipientGroup, VerificationType
 from ..mailer.gmail_sender import GmailSender
+from .api import router as api_router
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
@@ -45,6 +46,9 @@ SessionLocal = sessionmaker(bind=engine)
 
 # 테이블 생성
 Base.metadata.create_all(bind=engine)
+
+# API 라우터 등록
+app.include_router(api_router)
 
 # Gmail 발송기
 gmail_sender = GmailSender()

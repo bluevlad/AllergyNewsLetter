@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     web_host: str = Field(default="0.0.0.0", env="WEB_HOST")
     web_port: int = Field(default=4050, env="WEB_PORT")
 
+    # API 인증
+    api_secret_token: str = Field(default="", env="API_SECRET_TOKEN")
+
     # 이메일 인증
     verification_code_length: int = Field(default=6)
     verification_expiry_minutes: int = Field(default=10)
